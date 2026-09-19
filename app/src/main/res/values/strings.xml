@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">DoItAgain</string>
+    <string name="app_name" translatable="false">DoItAgain</string>
+    <string name="home_title">Reminders</string>
 </resources>
