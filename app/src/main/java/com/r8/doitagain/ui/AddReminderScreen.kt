@@ -53,39 +53,45 @@ internal fun AddReminderScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .imePadding()
-                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            Text(
-                text = stringResource(R.string.add_reminder),
-                style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.semantics { heading() },
-            )
-            OutlinedTextField(
-                value = state.title,
-                onValueChange = onTitleChange,
-                label = { Text(stringResource(R.string.reminder_title)) },
-                singleLine = true,
-                enabled = canEdit,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { if (state.title.isNotBlank() && canEdit) onSave() },
-                ),
-                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-            )
-            if (state.status == SavingStatus.ERROR) {
+            Column(
+                modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
                 Text(
-                    text = stringResource(R.string.save_error),
-                    color = MaterialTheme.colorScheme.error,
+                    text =
+                        stringResource(
+                            if (state.reminderId == null) R.string.add_reminder else R.string.edit_reminder,
+                        ),
+                    style = MaterialTheme.typography.headlineLarge,
+                    modifier = Modifier.semantics { heading() },
                 )
+                OutlinedTextField(
+                    value = state.title,
+                    onValueChange = onTitleChange,
+                    label = { Text(stringResource(R.string.reminder_title)) },
+                    singleLine = true,
+                    enabled = canEdit,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Done,
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { if (state.title.isNotBlank() && canEdit) onSave() },
+                    ),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                )
+                if (state.status == SavingStatus.ERROR) {
+                    Text(
+                        text = stringResource(R.string.save_error),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, androidx.compose.ui.Alignment.End),
             ) {
                 TextButton(onClick = onCancel, enabled = canEdit) {
                     Text(stringResource(R.string.cancel))

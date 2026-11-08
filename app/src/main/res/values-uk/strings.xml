@@ -1,6 +1,14 @@
 <resources>
     <string name="home_title">Нагадування</string>
     <string name="add_reminder">Додати задачу</string>
+    <string name="edit_reminder">Редагувати задачу</string>
+    <string name="back">Назад</string>
+    <string name="edit">Редагувати</string>
+    <string name="delete">Видалити</string>
+    <string name="confirm_delete">Видалити назавжди</string>
+    <string name="delete_reminder_title">Видалити задачу?</string>
+    <string name="delete_reminder_message">Задачу «%1$s» буде видалено назавжди.</string>
+    <string name="delete_error">Не вдалося видалити задачу. Спробуйте ще раз.</string>
     <string name="reminder_title">Назва</string>
     <string name="save">Зберегти</string>
     <string name="cancel">Скасувати</string>

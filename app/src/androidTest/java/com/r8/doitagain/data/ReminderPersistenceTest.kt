@@ -53,6 +53,23 @@ class ReminderPersistenceTest {
             assertTrue(withTimeout(5_000.milliseconds) { repository.reminders.first() }.isEmpty())
         }
 
+    @Test
+    fun repositoryUpdatesAndDeletesTasks() =
+        runBlocking {
+            val repository = RoomReminderRepository(openDatabase().reminderDao())
+            repository.add(Reminder(title = "Read"))
+            val original = withTimeout(5_000.milliseconds) { repository.reminders.first() }.single()
+
+            repository.update(original.copy(title = "  Read a book  "))
+            assertEquals(
+                listOf(original.copy(title = "Read a book")),
+                withTimeout(5_000.milliseconds) { repository.reminders.first() },
+            )
+
+            repository.delete(original.id)
+            assertTrue(withTimeout(5_000.milliseconds) { repository.reminders.first() }.isEmpty())
+        }
+
     private fun openDatabase(): ReminderDatabase =
         Room
             .databaseBuilder(context, ReminderDatabase::class.java, databaseName)

@@ -7,6 +7,10 @@ internal interface ReminderRepository {
     val reminders: Flow<List<Reminder>>
 
     suspend fun add(reminder: Reminder)
+
+    suspend fun update(reminder: Reminder)
+
+    suspend fun delete(id: Long)
 }
 
 internal class RoomReminderRepository
@@ -18,5 +22,13 @@ internal class RoomReminderRepository
 
         override suspend fun add(reminder: Reminder) {
             dao.insert(reminder.copy(title = reminder.title.trim()))
+        }
+
+        override suspend fun update(reminder: Reminder) {
+            dao.update(reminder.copy(title = reminder.title.trim()))
+        }
+
+        override suspend fun delete(id: Long) {
+            dao.delete(id)
         }
     }

@@ -188,6 +188,92 @@ class RemindersViewModelTest {
             assertEquals(AddReminderState(title = "Read a book"), model.state.value.editor)
         }
 
+    @Test
+    fun editingReminderUpdatesItsTitleAndPreservesItsId() =
+        runTest {
+            val reminder = Reminder(id = 7, title = "Read")
+            repository.rows.value = listOf(reminder)
+            val model = createModel()
+            runCurrent()
+
+            model.startEditing(reminder)
+            model.changeTitle("  Read a book  ")
+            model.save()
+            runCurrent()
+
+            assertEquals(listOf(Reminder(id = 7, title = "Read a book")), model.state.value.reminders)
+            assertEquals(1, repository.updateCalls)
+            assertEquals(0, repository.addCalls)
+            assertNull(model.state.value.editor)
+        }
+
+    @Test
+    fun cancellingEditReturnsToTheReminderBeingViewed() =
+        runTest {
+            val reminder = Reminder(id = 7, title = "Read")
+            repository.rows.value = listOf(reminder)
+            val model = createModel()
+            runCurrent()
+
+            model.viewReminder(reminder)
+            model.startEditing(reminder)
+            model.cancelAdding()
+
+            assertNull(model.state.value.editor)
+            assertEquals(reminder.id, model.state.value.viewingReminderId)
+        }
+
+    @Test
+    fun failedEditKeepsDraftAndAllowsRetry() =
+        runTest {
+            val reminder = Reminder(id = 7, title = "Read")
+            repository.rows.value = listOf(reminder)
+            repository.updateFails = true
+            val model = createModel()
+            runCurrent()
+            model.startEditing(reminder)
+            model.changeTitle("Read a book")
+            model.save()
+            runCurrent()
+
+            assertEquals(
+                AddReminderState(title = "Read a book", status = SavingStatus.ERROR, reminderId = 7),
+                model.state.value.editor,
+            )
+            repository.updateFails = false
+            model.save()
+            runCurrent()
+            assertEquals(listOf(Reminder(id = 7, title = "Read a book")), model.state.value.reminders)
+            assertNull(model.state.value.editor)
+        }
+
+    @Test
+    fun deletionRequiresConfirmationAndCanBeRetriedAfterFailure() =
+        runTest {
+            val reminder = Reminder(id = 7, title = "Read")
+            repository.rows.value = listOf(reminder)
+            repository.deleteFails = true
+            val model = createModel()
+            runCurrent()
+
+            model.requestDelete(reminder)
+            model.cancelDelete()
+            assertNull(model.state.value.deleteConfirmation)
+
+            model.requestDelete(reminder)
+            model.deleteReminder()
+            runCurrent()
+            assertEquals(DeletingStatus.ERROR, model.state.value.deleteConfirmation?.status)
+            assertEquals(listOf(reminder), model.state.value.reminders)
+
+            repository.deleteFails = false
+            model.deleteReminder()
+            runCurrent()
+            assertNull(model.state.value.deleteConfirmation)
+            assertEquals(emptyList<Reminder>(), model.state.value.reminders)
+            assertEquals(2, repository.deleteCalls)
+        }
+
     private fun copySavedState(savedState: SavedStateHandle): SavedStateHandle =
         SavedStateHandle(savedState.keys().associateWith { savedState.get<Any?>(it) })
 
@@ -201,7 +287,11 @@ class RemindersViewModelTest {
         var saveFails = false
         var loadFails = false
         var addCalls = 0
+        var updateCalls = 0
+        var deleteCalls = 0
         var saveGate: CompletableDeferred<Unit>? = null
+        var updateFails = false
+        var deleteFails = false
 
         override val reminders: Flow<List<Reminder>>
             get() =
@@ -215,6 +305,18 @@ class RemindersViewModelTest {
             saveGate?.await()
             if (saveFails) error("Write failed")
             rows.value += reminder
+        }
+
+        override suspend fun update(reminder: Reminder) {
+            updateCalls++
+            if (updateFails) error("Update failed")
+            rows.value = rows.value.map { if (it.id == reminder.id) reminder else it }
+        }
+
+        override suspend fun delete(id: Long) {
+            deleteCalls++
+            if (deleteFails) error("Delete failed")
+            rows.value = rows.value.filterNot { it.id == id }
         }
     }
 }

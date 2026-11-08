@@ -32,6 +32,7 @@ import com.r8.doitagain.ui.theme.DoItAgainTheme
 internal fun HomeScreen(
     reminders: List<Reminder>,
     onAddReminder: () -> Unit,
+    onOpenReminder: (Reminder) -> Unit = {},
     modifier: Modifier = Modifier,
     loadingStatus: LoadingStatus = LoadingStatus.READY,
     onRetry: () -> Unit = {},
@@ -84,7 +85,10 @@ internal fun HomeScreen(
                 }
             }
             items(reminders, key = { it.id }) { reminder ->
-                ReminderCard(reminder = reminder)
+                ReminderCard(
+                    reminder = reminder,
+                    onClick = { onOpenReminder(reminder) },
+                )
             }
         }
     }
@@ -92,13 +96,15 @@ internal fun HomeScreen(
 
 @Composable
 @Suppress("ktlint:standard:function-naming")
-private fun ReminderCard(reminder: Reminder) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = reminder.title,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(20.dp).semantics { heading() },
-        )
+private fun ReminderCard(reminder: Reminder, onClick: () -> Unit) {
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = reminder.title,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.fillMaxWidth().padding(8.dp).semantics { heading() },
+            )
+        }
     }
 }
 

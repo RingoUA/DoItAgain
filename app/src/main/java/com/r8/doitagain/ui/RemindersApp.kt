@@ -9,7 +9,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 internal fun RemindersApp(viewModel: RemindersViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val editor = state.editor
-    BackHandler(enabled = editor != null) { viewModel.cancelAdding() }
+    val viewedReminder = state.reminders.find { it.id == state.viewingReminderId }
+    BackHandler(enabled = editor != null || viewedReminder != null) {
+        if (editor != null) {
+            viewModel.cancelAdding()
+        } else {
+            viewModel.closeReminderView()
+        }
+    }
 
     if (editor != null) {
         AddReminderScreen(
@@ -18,10 +25,21 @@ internal fun RemindersApp(viewModel: RemindersViewModel) {
             onSave = viewModel::save,
             onCancel = viewModel::cancelAdding,
         )
+    } else if (viewedReminder != null) {
+        ReminderDetailScreen(
+            reminder = viewedReminder,
+            deleteConfirmation = state.deleteConfirmation,
+            onBack = viewModel::closeReminderView,
+            onEdit = { viewModel.startEditing(viewedReminder) },
+            onDelete = viewModel::requestDelete,
+            onConfirmDelete = viewModel::deleteReminder,
+            onCancelDelete = viewModel::cancelDelete,
+        )
     } else {
         HomeScreen(
             reminders = state.reminders,
             onAddReminder = viewModel::startAdding,
+            onOpenReminder = viewModel::viewReminder,
             loadingStatus = state.loadingStatus,
             onRetry = viewModel::loadReminders,
         )

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
@@ -58,5 +59,31 @@ class AddReminderFlowTest {
         }
         composeRule.onNodeWithText(context.getString(R.string.home_title)).assertIsDisplayed()
         composeRule.onNodeWithText("Власна назва").assertIsDisplayed()
+    }
+
+    @Test
+    fun reminderCanBeEditedAndDeletedFromTheList() {
+        composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput("Old title")
+        composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            model.state.value.editor == null && model.state.value.reminders.size == 1
+        }
+
+        composeRule.onNodeWithText("Old title").performClick()
+        composeRule.onNodeWithText(context.getString(R.string.edit)).performClick()
+        composeRule.onNode(hasSetTextAction()).performTextClearance()
+        composeRule.onNode(hasSetTextAction()).performTextInput("Updated title")
+        composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            model.state.value.editor == null && model.state.value.reminders.singleOrNull()?.title == "Updated title"
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.delete)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.delete_reminder_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.confirm_delete)).performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            model.state.value.reminders.isEmpty() && model.state.value.deleteConfirmation == null
+        }
     }
 }
