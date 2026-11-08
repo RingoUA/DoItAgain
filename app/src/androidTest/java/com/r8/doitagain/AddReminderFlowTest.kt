@@ -18,6 +18,7 @@ import com.r8.doitagain.data.RoomReminderRepository
 import com.r8.doitagain.ui.RemindersApp
 import com.r8.doitagain.ui.RemindersViewModel
 import com.r8.doitagain.ui.theme.DoItAgainTheme
+import org.junit.Assert.assertTrue
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -62,7 +63,7 @@ class AddReminderFlowTest {
     }
 
     @Test
-    fun reminderCanBeEditedAndDeletedFromTheList() {
+    fun reminderCanBeViewedEditedAndDeleted() {
         composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
         composeRule.onNode(hasSetTextAction()).performTextInput("Old title")
         composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
@@ -71,13 +72,35 @@ class AddReminderFlowTest {
         }
 
         composeRule.onNodeWithText("Old title").performClick()
+        composeRule.onNodeWithText("Old title").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.back)).assertIsDisplayed()
+        val detailTitleBottom =
+            composeRule.onNodeWithText("Old title").fetchSemanticsNode().boundsInRoot.bottom
+        val detailActionsTop =
+            composeRule.onNodeWithText(context.getString(R.string.edit)).fetchSemanticsNode().boundsInRoot.top
+        assertTrue("Detail actions should be below the reminder content", detailActionsTop > detailTitleBottom)
+
         composeRule.onNodeWithText(context.getString(R.string.edit)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.edit_reminder)).assertIsDisplayed()
+        val editorFieldBottom =
+            composeRule.onNode(hasSetTextAction()).fetchSemanticsNode().boundsInRoot.bottom
+        val editorActionsTop =
+            composeRule.onNodeWithText(context.getString(R.string.cancel)).fetchSemanticsNode().boundsInRoot.top
+        assertTrue("Editor actions should be below the editable fields", editorActionsTop > editorFieldBottom)
+
         composeRule.onNode(hasSetTextAction()).performTextClearance()
         composeRule.onNode(hasSetTextAction()).performTextInput("Updated title")
         composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
             model.state.value.editor == null && model.state.value.reminders.singleOrNull()?.title == "Updated title"
         }
+        composeRule.onNodeWithText("Updated title").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.back)).assertIsDisplayed()
+
+        composeRule.onNodeWithText(context.getString(R.string.delete)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.delete_reminder_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.cancel)).performClick()
+        composeRule.onNodeWithText("Updated title").assertIsDisplayed()
 
         composeRule.onNodeWithText(context.getString(R.string.delete)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.delete_reminder_title)).assertIsDisplayed()
@@ -85,5 +108,26 @@ class AddReminderFlowTest {
         composeRule.waitUntil(timeoutMillis = 5_000) {
             model.state.value.reminders.isEmpty() && model.state.value.deleteConfirmation == null
         }
+        composeRule.onNodeWithText(context.getString(R.string.home_title)).assertIsDisplayed()
+    }
+
+    @Test
+    fun cancellingEditReturnsToReminderDetailsAndBackReturnsToList() {
+        composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput("Keep this title")
+        composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            model.state.value.editor == null && model.state.value.reminders.size == 1
+        }
+
+        composeRule.onNodeWithText("Keep this title").performClick()
+        composeRule.onNodeWithText(context.getString(R.string.edit)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.cancel)).performClick()
+
+        composeRule.onNodeWithText("Keep this title").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.edit)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.back)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.home_title)).assertIsDisplayed()
+        composeRule.onNodeWithText("Keep this title").assertIsDisplayed()
     }
 }

@@ -224,6 +224,37 @@ class RemindersViewModelTest {
         }
 
     @Test
+    fun viewingReminderCanBeRestoredAfterRecreation() =
+        runTest {
+            val reminder = Reminder(id = 7, title = "Read")
+            repository.rows.value = listOf(reminder)
+            val savedState = SavedStateHandle()
+            val original = createModel(savedState)
+            runCurrent()
+            original.viewReminder(reminder)
+
+            val restored = createModel(copySavedState(savedState))
+            runCurrent()
+
+            assertEquals(reminder.id, restored.state.value.viewingReminderId)
+        }
+
+    @Test
+    fun addingFromReminderViewClosesTheView() =
+        runTest {
+            val reminder = Reminder(id = 7, title = "Read")
+            repository.rows.value = listOf(reminder)
+            val model = createModel()
+            runCurrent()
+            model.viewReminder(reminder)
+
+            model.startAdding()
+
+            assertEquals(AddReminderState(), model.state.value.editor)
+            assertNull(model.state.value.viewingReminderId)
+        }
+
+    @Test
     fun failedEditKeepsDraftAndAllowsRetry() =
         runTest {
             val reminder = Reminder(id = 7, title = "Read")
@@ -271,6 +302,7 @@ class RemindersViewModelTest {
             runCurrent()
             assertNull(model.state.value.deleteConfirmation)
             assertEquals(emptyList<Reminder>(), model.state.value.reminders)
+            assertNull(model.state.value.viewingReminderId)
             assertEquals(2, repository.deleteCalls)
         }
 
