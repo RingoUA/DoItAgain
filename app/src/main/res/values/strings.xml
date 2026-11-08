@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name" translatable="false">DoItAgain</string>
     <string name="home_title">Reminders</string>
+    <string name="add_reminder">Add task</string>
+    <string name="reminder_title">Title</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="save_error">Could not save the task. Try again.</string>
+    <string name="load_error">Could not load your tasks.</string>
+    <string name="retry">Retry</string>
 </resources>

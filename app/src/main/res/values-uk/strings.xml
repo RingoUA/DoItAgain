@@ -1,3 +1,10 @@
 <resources>
     <string name="home_title">Нагадування</string>
+    <string name="add_reminder">Додати задачу</string>
+    <string name="reminder_title">Назва</string>
+    <string name="save">Зберегти</string>
+    <string name="cancel">Скасувати</string>
+    <string name="save_error">Не вдалося зберегти задачу. Спробуйте ще раз.</string>
+    <string name="load_error">Не вдалося завантажити задачі.</string>
+    <string name="retry">Повторити</string>
 </resources>
