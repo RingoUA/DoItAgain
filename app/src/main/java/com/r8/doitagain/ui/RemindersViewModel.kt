@@ -31,6 +31,10 @@ internal class RemindersViewModel
                             AddReminderState(
                                 title = it,
                                 reminderId = savedStateHandle.get<Long>(EDITOR_REMINDER_ID),
+                                hour = savedStateHandle.get<Int>(EDITOR_HOUR) ?: Reminder.DEFAULT_REMINDER_HOUR,
+                                minute = savedStateHandle.get<Int>(EDITOR_MINUTE) ?: 0,
+                                daysOfWeekMask =
+                                    savedStateHandle.get<Int>(EDITOR_DAYS_OF_WEEK_MASK) ?: Reminder.ALL_DAYS_MASK,
                             )
                         },
                 ),
@@ -62,6 +66,7 @@ internal class RemindersViewModel
             closeReminderView()
             savedStateHandle[EDITOR_TITLE] = ""
             savedStateHandle.remove<Long>(EDITOR_REMINDER_ID)
+            saveEditorSchedule(AddReminderState())
             mutableState.update { it.copy(editor = AddReminderState()) }
         }
 
@@ -69,8 +74,24 @@ internal class RemindersViewModel
             if (state.value.editor != null) return
             savedStateHandle[EDITOR_TITLE] = reminder.title
             savedStateHandle[EDITOR_REMINDER_ID] = reminder.id
+            saveEditorSchedule(
+                AddReminderState(
+                    hour = reminder.hour,
+                    minute = reminder.minute,
+                    daysOfWeekMask = reminder.daysOfWeekMask,
+                ),
+            )
             mutableState.update {
-                it.copy(editor = AddReminderState(title = reminder.title, reminderId = reminder.id))
+                it.copy(
+                    editor =
+                        AddReminderState(
+                            title = reminder.title,
+                            reminderId = reminder.id,
+                            hour = reminder.hour,
+                            minute = reminder.minute,
+                            daysOfWeekMask = reminder.daysOfWeekMask,
+                        ),
+                )
             }
         }
 
@@ -94,6 +115,26 @@ internal class RemindersViewModel
             }
         }
 
+        fun changeTime(hour: Int, minute: Int) {
+            val editor = state.value.editor ?: return
+            if (editor.status == SavingStatus.SAVING) return
+            val updated = editor.copy(hour = hour, minute = minute, status = SavingStatus.EDITING)
+            saveEditorSchedule(updated)
+            mutableState.update { it.copy(editor = updated) }
+        }
+
+        fun toggleWeekday(bit: Int) {
+            val editor = state.value.editor ?: return
+            if (editor.status == SavingStatus.SAVING) return
+            val updated =
+                editor.copy(
+                    daysOfWeekMask = editor.daysOfWeekMask xor bit,
+                    status = SavingStatus.EDITING,
+                )
+            saveEditorSchedule(updated)
+            mutableState.update { it.copy(editor = updated) }
+        }
+
         fun cancelAdding() {
             if (state.value.editor?.status == SavingStatus.SAVING) return
             closeEditor()
@@ -106,7 +147,14 @@ internal class RemindersViewModel
             mutableState.update { it.copy(editor = editor.copy(status = SavingStatus.SAVING)) }
             viewModelScope.launch {
                 try {
-                    val reminder = Reminder(id = editor.reminderId ?: 0, title = title)
+                    val reminder =
+                        Reminder(
+                            id = editor.reminderId ?: 0,
+                            title = title,
+                            hour = editor.hour,
+                            minute = editor.minute,
+                            daysOfWeekMask = editor.daysOfWeekMask,
+                        )
                     if (editor.reminderId == null) {
                         repository.add(reminder)
                     } else {
@@ -157,12 +205,24 @@ internal class RemindersViewModel
         private fun closeEditor() {
             savedStateHandle.remove<String>(EDITOR_TITLE)
             savedStateHandle.remove<Long>(EDITOR_REMINDER_ID)
+            savedStateHandle.remove<Int>(EDITOR_HOUR)
+            savedStateHandle.remove<Int>(EDITOR_MINUTE)
+            savedStateHandle.remove<Int>(EDITOR_DAYS_OF_WEEK_MASK)
             mutableState.update { it.copy(editor = null) }
+        }
+
+        private fun saveEditorSchedule(editor: AddReminderState) {
+            savedStateHandle[EDITOR_HOUR] = editor.hour
+            savedStateHandle[EDITOR_MINUTE] = editor.minute
+            savedStateHandle[EDITOR_DAYS_OF_WEEK_MASK] = editor.daysOfWeekMask
         }
 
         private companion object {
             const val EDITOR_TITLE = "editorTitle"
             const val EDITOR_REMINDER_ID = "editorReminderId"
+            const val EDITOR_HOUR = "editorHour"
+            const val EDITOR_MINUTE = "editorMinute"
+            const val EDITOR_DAYS_OF_WEEK_MASK = "editorDaysOfWeekMask"
             const val VIEWING_REMINDER_ID = "viewingReminderId"
         }
     }

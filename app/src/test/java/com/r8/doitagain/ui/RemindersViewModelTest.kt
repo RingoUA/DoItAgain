@@ -3,6 +3,7 @@ package com.r8.doitagain.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import com.r8.doitagain.data.Reminder
+import com.r8.doitagain.data.ReminderWeekday
 import com.r8.doitagain.data.ReminderRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -125,10 +126,45 @@ class RemindersViewModelTest {
             val original = createModel(savedState)
             original.startAdding()
             original.changeTitle("Draft")
+            original.changeTime(18, 45)
+            original.toggleWeekday(ReminderWeekday.SUNDAY.bit)
             val restored = createModel(copySavedState(savedState))
             runCurrent()
-            assertEquals(AddReminderState(title = "Draft"), restored.state.value.editor)
+            assertEquals(
+                AddReminderState(
+                    title = "Draft",
+                    hour = 18,
+                    minute = 45,
+                    daysOfWeekMask = Reminder.ALL_DAYS_MASK xor ReminderWeekday.SUNDAY.bit,
+                ),
+                restored.state.value.editor,
+            )
             assertEquals(0, repository.addCalls)
+        }
+
+    @Test
+    fun creatingReminderSavesTimeAndWeekdayMask() =
+        runTest {
+            val model = createModel()
+            model.startAdding()
+            model.changeTitle("Take medicine")
+            model.changeTime(7, 5)
+            model.toggleWeekday(ReminderWeekday.SATURDAY.bit)
+            model.save()
+            runCurrent()
+
+            assertEquals(
+                listOf(
+                    Reminder(
+                        id = 0,
+                        title = "Take medicine",
+                        hour = 7,
+                        minute = 5,
+                        daysOfWeekMask = Reminder.ALL_DAYS_MASK xor ReminderWeekday.SATURDAY.bit,
+                    ),
+                ),
+                model.state.value.reminders,
+            )
         }
 
     @Test
@@ -206,6 +242,41 @@ class RemindersViewModelTest {
             assertEquals(0, repository.addCalls)
             assertNull(model.state.value.editor)
         }
+
+        @Test
+        fun editingReminderUpdatesTimeAndWeekdayMask() =
+            runTest {
+                val reminder =
+                    Reminder(
+                        id = 7,
+                        title = "Read",
+                        hour = 8,
+                        minute = 30,
+                        daysOfWeekMask = ReminderWeekday.MONDAY.bit or ReminderWeekday.FRIDAY.bit,
+                    )
+                repository.rows.value = listOf(reminder)
+                val model = createModel()
+                runCurrent()
+
+                model.startEditing(reminder)
+                model.changeTime(21, 0)
+                model.toggleWeekday(ReminderWeekday.FRIDAY.bit)
+                model.toggleWeekday(ReminderWeekday.SUNDAY.bit)
+                model.save()
+                runCurrent()
+
+                assertEquals(
+                    listOf(
+                        reminder.copy(
+                            hour = 21,
+                            minute = 0,
+                            daysOfWeekMask = ReminderWeekday.MONDAY.bit or ReminderWeekday.SUNDAY.bit,
+                        ),
+                    ),
+                    model.state.value.reminders,
+                )
+                assertEquals(1, repository.updateCalls)
+            }
 
     @Test
     fun cancellingEditReturnsToTheReminderBeingViewed() =

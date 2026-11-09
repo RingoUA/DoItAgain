@@ -18,6 +18,9 @@ internal data class AddReminderState(
     val title: String = "",
     val status: SavingStatus = SavingStatus.EDITING,
     val reminderId: Long? = null,
+    val hour: Int = Reminder.DEFAULT_REMINDER_HOUR,
+    val minute: Int = 0,
+    val daysOfWeekMask: Int = Reminder.ALL_DAYS_MASK,
 )
 
 internal enum class DeletingStatus {

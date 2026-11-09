@@ -1,5 +1,6 @@
 package com.r8.doitagain.ui
 
+import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -39,12 +42,16 @@ import com.r8.doitagain.ui.theme.DoItAgainTheme
 internal fun AddReminderScreen(
     state: AddReminderState,
     onTitleChange: (String) -> Unit,
+    onTimeChange: (Int, Int) -> Unit,
+    onToggleWeekday: (Int) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val canEdit = state.status != SavingStatus.SAVING
     val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
     Scaffold(modifier = modifier) { innerPadding ->
@@ -78,9 +85,41 @@ internal fun AddReminderScreen(
                         imeAction = ImeAction.Done,
                     ),
                     keyboardActions = KeyboardActions(
-                        onDone = { if (state.title.isNotBlank() && canEdit) onSave() },
+                        onDone = {
+                            if (state.title.isNotBlank() && canEdit) {
+                                keyboardController?.hide()
+                                onSave()
+                            }
+                        },
                     ),
                     modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                )
+                Text(
+                    text = stringResource(R.string.reminder_time),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                ReminderTimeButton(
+                    hour = state.hour,
+                    minute = state.minute,
+                    enabled = canEdit,
+                    onClick = {
+                        TimePickerDialog(
+                            context,
+                            { _, hour, minute -> onTimeChange(hour, minute) },
+                            state.hour,
+                            state.minute,
+                            true,
+                        ).show()
+                    },
+                )
+                Text(
+                    text = stringResource(R.string.reminder_days),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                WeekdaySelector(
+                    daysOfWeekMask = state.daysOfWeekMask,
+                    enabled = canEdit,
+                    onToggleWeekday = onToggleWeekday,
                 )
                 if (state.status == SavingStatus.ERROR) {
                     Text(
@@ -93,10 +132,22 @@ internal fun AddReminderScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, androidx.compose.ui.Alignment.End),
             ) {
-                TextButton(onClick = onCancel, enabled = canEdit) {
+                TextButton(
+                    onClick = {
+                        keyboardController?.hide()
+                        onCancel()
+                    },
+                    enabled = canEdit,
+                ) {
                     Text(stringResource(R.string.cancel))
                 }
-                Button(onClick = onSave, enabled = state.title.isNotBlank() && canEdit) {
+                Button(
+                    onClick = {
+                        keyboardController?.hide()
+                        onSave()
+                    },
+                    enabled = state.title.isNotBlank() && canEdit,
+                ) {
                     if (state.status == SavingStatus.SAVING) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                     } else {
@@ -116,6 +167,8 @@ private fun AddReminderScreenPreview() {
         AddReminderScreen(
             state = AddReminderState(),
             onTitleChange = {},
+            onTimeChange = { _, _ -> },
+            onToggleWeekday = {},
             onSave = {},
             onCancel = {},
         )

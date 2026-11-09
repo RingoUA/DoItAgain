@@ -17,7 +17,10 @@ internal object DatabaseModule {
     @Provides
     @Singleton
     fun provideReminderDatabase(@ApplicationContext context: Context): ReminderDatabase =
-        Room.databaseBuilder(context, ReminderDatabase::class.java, "reminders.db").build()
+        Room
+            .databaseBuilder(context, ReminderDatabase::class.java, "reminders.db")
+            .addMigrations(ReminderDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideReminderDao(database: ReminderDatabase): ReminderDao = database.reminderDao()

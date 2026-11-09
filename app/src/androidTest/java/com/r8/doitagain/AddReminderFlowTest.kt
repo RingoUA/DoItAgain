@@ -1,6 +1,9 @@
 package com.r8.doitagain
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -14,6 +17,8 @@ import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.r8.doitagain.data.ReminderDatabase
+import com.r8.doitagain.data.Reminder
+import com.r8.doitagain.data.ReminderWeekday
 import com.r8.doitagain.data.RoomReminderRepository
 import com.r8.doitagain.ui.RemindersApp
 import com.r8.doitagain.ui.RemindersViewModel
@@ -23,6 +28,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Assert.assertEquals
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -129,5 +135,75 @@ class AddReminderFlowTest {
         composeRule.onNodeWithText(context.getString(R.string.back)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.home_title)).assertIsDisplayed()
         composeRule.onNodeWithText("Keep this title").assertIsDisplayed()
+    }
+
+    @Test
+    fun reminderScheduleCanBeAddedViewedAndEdited() {
+        composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput("Take medicine")
+        composeRule.onNodeWithText(context.getString(R.string.saturday_short)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            model.state.value.editor == null && model.state.value.reminders.size == 1
+        }
+
+        val saved = model.state.value.reminders.single()
+        assertEquals(Reminder.DEFAULT_REMINDER_HOUR, saved.hour)
+        assertEquals(0, saved.minute)
+        assertEquals(Reminder.ALL_DAYS_MASK xor ReminderWeekday.SATURDAY.bit, saved.daysOfWeekMask)
+        composeRule.onNodeWithText("Take medicine").performClick()
+        composeRule.onNodeWithText(context.getString(R.string.reminder_time)).assertIsDisplayed()
+        composeRule.onNodeWithText("09:00").assertIsDisplayed().assertIsNotEnabled()
+        val weekdayLabels =
+            listOf(
+                R.string.monday_short,
+                R.string.tuesday_short,
+                R.string.wednesday_short,
+                R.string.thursday_short,
+                R.string.friday_short,
+                R.string.saturday_short,
+                R.string.sunday_short,
+            ).map(context::getString)
+        weekdayLabels.forEach { label ->
+            composeRule.onNodeWithText(label).assertIsDisplayed().assertIsNotEnabled()
+        }
+        composeRule.onNodeWithText(context.getString(R.string.monday_short)).assertIsSelected()
+        composeRule.onNodeWithText(context.getString(R.string.saturday_short)).assertIsNotSelected()
+
+        composeRule.onNodeWithText(context.getString(R.string.edit)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.saturday_short)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.friday_short)).performClick()
+        composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            model.state.value.editor == null &&
+                model.state.value.reminders.singleOrNull()?.daysOfWeekMask ==
+                (Reminder.ALL_DAYS_MASK xor ReminderWeekday.FRIDAY.bit)
+        }
+
+        composeRule.onNodeWithText("09:00").assertIsDisplayed()
+        composeRule.onNodeWithText("Take medicine").assertIsDisplayed()
+    }
+
+    @Test
+    fun allWeekdayButtonsFitInOneFullWidthRow() {
+        composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
+
+        val weekdayLabels =
+            listOf(
+                R.string.monday_short,
+                R.string.tuesday_short,
+                R.string.wednesday_short,
+                R.string.thursday_short,
+                R.string.friday_short,
+                R.string.saturday_short,
+                R.string.sunday_short,
+            ).map(context::getString)
+        val bounds = weekdayLabels.map { label ->
+            composeRule.onNodeWithText(label).assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        }
+        assertEquals(1, bounds.map { it.top }.distinct().size)
+        assertTrue(bounds.first().left >= 0f)
+        assertTrue(bounds.first().left < bounds.last().left)
+        assertTrue(bounds.last().right > bounds.first().right)
     }
 }

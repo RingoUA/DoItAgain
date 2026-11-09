@@ -52,6 +52,19 @@ internal fun ReminderDetailScreen(
                     style = MaterialTheme.typography.headlineLarge,
                     modifier = Modifier.semantics { heading() },
                 )
+                Text(stringResource(R.string.reminder_time))
+                ReminderTimeButton(
+                    hour = reminder.hour,
+                    minute = reminder.minute,
+                    enabled = false,
+                    onClick = {},
+                )
+                Text(stringResource(R.string.reminder_days))
+                WeekdaySelector(
+                    daysOfWeekMask = reminder.daysOfWeekMask,
+                    enabled = false,
+                    onToggleWeekday = {},
+                )
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),

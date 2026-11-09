@@ -22,6 +22,8 @@ internal fun RemindersApp(viewModel: RemindersViewModel) {
         AddReminderScreen(
             state = editor,
             onTitleChange = viewModel::changeTitle,
+            onTimeChange = viewModel::changeTime,
+            onToggleWeekday = viewModel::toggleWeekday,
             onSave = viewModel::save,
             onCancel = viewModel::cancelAdding,
         )

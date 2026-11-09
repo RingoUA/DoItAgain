@@ -6,6 +6,8 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.Update
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -23,7 +25,20 @@ internal interface ReminderDao {
     suspend fun delete(id: Long): Int
 }
 
-@Database(entities = [Reminder::class], version = 1, exportSchema = true)
+@Database(entities = [Reminder::class], version = 2, exportSchema = true)
 internal abstract class ReminderDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
+
+    internal companion object {
+        val MIGRATION_1_2 =
+            object : Migration(1, 2) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE reminders ADD COLUMN hour INTEGER NOT NULL DEFAULT 9")
+                    db.execSQL("ALTER TABLE reminders ADD COLUMN minute INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL(
+                        "ALTER TABLE reminders ADD COLUMN days_of_week_mask INTEGER NOT NULL DEFAULT 127",
+                    )
+                }
+            }
+    }
 }
