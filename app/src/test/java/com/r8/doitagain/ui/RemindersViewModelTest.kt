@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelStore
 import com.r8.doitagain.data.Reminder
 import com.r8.doitagain.data.ReminderWeekday
 import com.r8.doitagain.data.ReminderRepository
+import com.r8.doitagain.reminders.ReminderAlarmScheduler
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,6 +29,7 @@ class RemindersViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val viewModelStore = ViewModelStore()
     private val repository = FakeReminderRepository()
+    private val alarmScheduler = FakeReminderAlarmScheduler()
     private var modelCount = 0
 
     @Before
@@ -381,9 +383,17 @@ class RemindersViewModelTest {
         SavedStateHandle(savedState.keys().associateWith { savedState.get<Any?>(it) })
 
     private fun createModel(savedState: SavedStateHandle = SavedStateHandle()): RemindersViewModel =
-        RemindersViewModel(repository, savedState).also {
+        RemindersViewModel(repository, savedState, alarmScheduler).also {
             viewModelStore.put("model-${modelCount++}", it)
         }
+
+    private class FakeReminderAlarmScheduler : ReminderAlarmScheduler {
+        override fun scheduleAll(reminders: List<Reminder>) = Unit
+
+        override fun schedule(reminder: Reminder) = Unit
+
+        override fun cancel(reminderId: Long) = Unit
+    }
 
     private class FakeReminderRepository : ReminderRepository {
         val rows = MutableStateFlow<List<Reminder>>(emptyList())

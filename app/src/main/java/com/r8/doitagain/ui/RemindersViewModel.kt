@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.r8.doitagain.data.Reminder
 import com.r8.doitagain.data.ReminderRepository
+import com.r8.doitagain.reminders.ReminderAlarmScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -21,6 +22,7 @@ internal class RemindersViewModel
     constructor(
         private val repository: ReminderRepository,
         private val savedStateHandle: SavedStateHandle,
+        private val alarmScheduler: ReminderAlarmScheduler,
     ) : ViewModel() {
         private val mutableState =
             MutableStateFlow(
@@ -46,14 +48,21 @@ internal class RemindersViewModel
             loadReminders()
         }
 
+        fun refreshAlarms() {
+            alarmScheduler.scheduleAll(state.value.reminders)
+        }
+
         fun loadReminders() {
             loadJob?.cancel()
             mutableState.update { it.copy(loadingStatus = LoadingStatus.LOADING) }
             loadJob =
                 viewModelScope.launch {
                     repository.reminders
-                        .catch { mutableState.update { it.copy(loadingStatus = LoadingStatus.ERROR) } }
+                        .catch {
+                            mutableState.update { it.copy(loadingStatus = LoadingStatus.ERROR) }
+                        }
                         .collect { reminders ->
+                            alarmScheduler.scheduleAll(reminders)
                             mutableState.update {
                                 it.copy(reminders = reminders, loadingStatus = LoadingStatus.READY)
                             }
@@ -188,6 +197,7 @@ internal class RemindersViewModel
             viewModelScope.launch {
                 try {
                     repository.delete(deletion.reminder.id)
+                    alarmScheduler.cancel(deletion.reminder.id)
                     if (state.value.viewingReminderId == deletion.reminder.id) {
                         closeReminderView()
                     }

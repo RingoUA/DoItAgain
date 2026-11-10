@@ -20,6 +20,7 @@ import com.r8.doitagain.data.ReminderDatabase
 import com.r8.doitagain.data.Reminder
 import com.r8.doitagain.data.ReminderWeekday
 import com.r8.doitagain.data.RoomReminderRepository
+import com.r8.doitagain.reminders.ReminderAlarmScheduler
 import com.r8.doitagain.ui.RemindersApp
 import com.r8.doitagain.ui.RemindersViewModel
 import com.r8.doitagain.ui.theme.DoItAgainTheme
@@ -43,7 +44,12 @@ class AddReminderFlowTest {
     @Before
     fun setUp() {
         database = Room.inMemoryDatabaseBuilder(context, ReminderDatabase::class.java).build()
-        model = RemindersViewModel(RoomReminderRepository(database.reminderDao()), SavedStateHandle())
+        model =
+            RemindersViewModel(
+                RoomReminderRepository(database.reminderDao()),
+                SavedStateHandle(),
+                NoOpReminderAlarmScheduler,
+            )
         store.put("test", model)
         composeRule.setContent {
             DoItAgainTheme { RemindersApp(model) }
@@ -206,4 +212,12 @@ class AddReminderFlowTest {
         assertTrue(bounds.first().left < bounds.last().left)
         assertTrue(bounds.last().right > bounds.first().right)
     }
+}
+
+private object NoOpReminderAlarmScheduler : ReminderAlarmScheduler {
+    override fun scheduleAll(reminders: List<Reminder>) = Unit
+
+    override fun schedule(reminder: Reminder) = Unit
+
+    override fun cancel(reminderId: Long) = Unit
 }

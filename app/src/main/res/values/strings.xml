@@ -34,4 +34,7 @@
     <string name="save_error">Could not save the task. Try again.</string>
     <string name="load_error">Could not load your tasks.</string>
     <string name="retry">Retry</string>
+    <string name="reminder_notification_title">Reminder</string>
+    <string name="reminder_notification_channel">Reminders</string>
+    <string name="reminder_notification_channel_description">Notifications for scheduled reminders</string>
 </resources>

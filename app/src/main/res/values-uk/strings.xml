@@ -33,4 +33,7 @@
     <string name="save_error">Не вдалося зберегти задачу. Спробуйте ще раз.</string>
     <string name="load_error">Не вдалося завантажити задачі.</string>
     <string name="retry">Повторити</string>
+    <string name="reminder_notification_title">Нагадування</string>
+    <string name="reminder_notification_channel">Нагадування</string>
+    <string name="reminder_notification_channel_description">Сповіщення про заплановані нагадування</string>
 </resources>
