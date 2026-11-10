@@ -28,6 +28,9 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || test "${PIPESTATUS[1]}" -eq 0
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
