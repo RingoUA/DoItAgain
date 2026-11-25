@@ -23,5 +23,9 @@ class ReminderTest {
                 Reminder(title = "Invalid weekday mask", daysOfWeekMask = Reminder.ALL_DAYS_MASK + 1)
             }.exceptionOrNull() is IllegalArgumentException,
         )
+        assertTrue(
+            runCatching { Reminder(title = "Invalid repeat interval", repeatIntervalMinutes = 0) }
+                .exceptionOrNull() is IllegalArgumentException,
+        )
     }
 }

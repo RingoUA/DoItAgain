@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -18,6 +19,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.r8.doitagain.data.ReminderDatabase
 import com.r8.doitagain.data.Reminder
+import com.r8.doitagain.data.ReminderSession
 import com.r8.doitagain.data.ReminderWeekday
 import com.r8.doitagain.data.RoomReminderRepository
 import com.r8.doitagain.reminders.ReminderAlarmScheduler
@@ -65,7 +67,7 @@ class AddReminderFlowTest {
     @Test
     fun savingNewTitleReturnsToListAndShowsStoredTask() {
         composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
-        composeRule.onNode(hasSetTextAction()).performTextInput("  Власна назва  ")
+        composeRule.onNode(hasSetTextAction() and hasText("")).performTextInput("  Власна назва  ")
         composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
             model.state.value.editor == null && model.state.value.reminders.size == 1
@@ -77,7 +79,7 @@ class AddReminderFlowTest {
     @Test
     fun reminderCanBeViewedEditedAndDeleted() {
         composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
-        composeRule.onNode(hasSetTextAction()).performTextInput("Old title")
+        composeRule.onNode(hasSetTextAction() and hasText("")).performTextInput("Old title")
         composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
             model.state.value.editor == null && model.state.value.reminders.size == 1
@@ -95,13 +97,13 @@ class AddReminderFlowTest {
         composeRule.onNodeWithText(context.getString(R.string.edit)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.edit_reminder)).assertIsDisplayed()
         val editorFieldBottom =
-            composeRule.onNode(hasSetTextAction()).fetchSemanticsNode().boundsInRoot.bottom
+            composeRule.onNode(hasSetTextAction() and hasText("Old title")).fetchSemanticsNode().boundsInRoot.bottom
         val editorActionsTop =
             composeRule.onNodeWithText(context.getString(R.string.cancel)).fetchSemanticsNode().boundsInRoot.top
         assertTrue("Editor actions should be below the editable fields", editorActionsTop > editorFieldBottom)
 
-        composeRule.onNode(hasSetTextAction()).performTextClearance()
-        composeRule.onNode(hasSetTextAction()).performTextInput("Updated title")
+        composeRule.onNode(hasSetTextAction() and hasText("Old title")).performTextClearance()
+        composeRule.onNode(hasSetTextAction() and hasText("")).performTextInput("Updated title")
         composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
             model.state.value.editor == null && model.state.value.reminders.singleOrNull()?.title == "Updated title"
@@ -126,7 +128,7 @@ class AddReminderFlowTest {
     @Test
     fun cancellingEditReturnsToReminderDetailsAndBackReturnsToList() {
         composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
-        composeRule.onNode(hasSetTextAction()).performTextInput("Keep this title")
+        composeRule.onNode(hasSetTextAction() and hasText("")).performTextInput("Keep this title")
         composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
             model.state.value.editor == null && model.state.value.reminders.size == 1
@@ -146,7 +148,7 @@ class AddReminderFlowTest {
     @Test
     fun reminderScheduleCanBeAddedViewedAndEdited() {
         composeRule.onNodeWithContentDescription(context.getString(R.string.add_reminder)).performClick()
-        composeRule.onNode(hasSetTextAction()).performTextInput("Take medicine")
+        composeRule.onNode(hasSetTextAction() and hasText("")).performTextInput("Take medicine")
         composeRule.onNodeWithText(context.getString(R.string.saturday_short)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.save)).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -219,5 +221,9 @@ private object NoOpReminderAlarmScheduler : ReminderAlarmScheduler {
 
     override fun schedule(reminder: Reminder) = Unit
 
+    override fun scheduleSession(session: ReminderSession) = Unit
+
     override fun cancel(reminderId: Long) = Unit
+
+    override fun cancelSession(reminderId: Long) = Unit
 }

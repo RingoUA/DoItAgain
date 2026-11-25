@@ -12,6 +12,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -37,6 +38,9 @@ internal class RemindersViewModel
                                 minute = savedStateHandle.get<Int>(EDITOR_MINUTE) ?: 0,
                                 daysOfWeekMask =
                                     savedStateHandle.get<Int>(EDITOR_DAYS_OF_WEEK_MASK) ?: Reminder.ALL_DAYS_MASK,
+                                repeatIntervalMinutes =
+                                    savedStateHandle.get<String>(EDITOR_REPEAT_INTERVAL)
+                                        ?: Reminder.DEFAULT_REPEAT_INTERVAL_MINUTES.toString(),
                             )
                         },
                 ),
@@ -50,6 +54,7 @@ internal class RemindersViewModel
 
         fun refreshAlarms() {
             alarmScheduler.scheduleAll(state.value.reminders)
+            scheduleSessions()
         }
 
         fun loadReminders() {
@@ -60,9 +65,9 @@ internal class RemindersViewModel
                     repository.reminders
                         .catch {
                             mutableState.update { it.copy(loadingStatus = LoadingStatus.ERROR) }
-                        }
-                        .collect { reminders ->
+                        }.collect { reminders ->
                             alarmScheduler.scheduleAll(reminders)
+                            scheduleSessions()
                             mutableState.update {
                                 it.copy(reminders = reminders, loadingStatus = LoadingStatus.READY)
                             }
@@ -88,6 +93,7 @@ internal class RemindersViewModel
                     hour = reminder.hour,
                     minute = reminder.minute,
                     daysOfWeekMask = reminder.daysOfWeekMask,
+                    repeatIntervalMinutes = reminder.repeatIntervalMinutes.toString(),
                 ),
             )
             mutableState.update {
@@ -99,6 +105,7 @@ internal class RemindersViewModel
                             hour = reminder.hour,
                             minute = reminder.minute,
                             daysOfWeekMask = reminder.daysOfWeekMask,
+                            repeatIntervalMinutes = reminder.repeatIntervalMinutes.toString(),
                         ),
                 )
             }
@@ -124,7 +131,10 @@ internal class RemindersViewModel
             }
         }
 
-        fun changeTime(hour: Int, minute: Int) {
+        fun changeTime(
+            hour: Int,
+            minute: Int,
+        ) {
             val editor = state.value.editor ?: return
             if (editor.status == SavingStatus.SAVING) return
             val updated = editor.copy(hour = hour, minute = minute, status = SavingStatus.EDITING)
@@ -144,6 +154,14 @@ internal class RemindersViewModel
             mutableState.update { it.copy(editor = updated) }
         }
 
+        fun changeRepeatInterval(minutes: String) {
+            val editor = state.value.editor ?: return
+            if (editor.status == SavingStatus.SAVING || minutes.any { !it.isDigit() }) return
+            val updated = editor.copy(repeatIntervalMinutes = minutes, status = SavingStatus.EDITING)
+            saveEditorSchedule(updated)
+            mutableState.update { it.copy(editor = updated) }
+        }
+
         fun cancelAdding() {
             if (state.value.editor?.status == SavingStatus.SAVING) return
             closeEditor()
@@ -152,6 +170,8 @@ internal class RemindersViewModel
         fun save() {
             val editor = state.value.editor ?: return
             if (editor.status == SavingStatus.SAVING || editor.title.isBlank()) return
+            val repeatIntervalMinutes = editor.repeatIntervalMinutes.toIntOrNull()
+            if (repeatIntervalMinutes == null || repeatIntervalMinutes <= 0) return
             val title = editor.title.trim()
             mutableState.update { it.copy(editor = editor.copy(status = SavingStatus.SAVING)) }
             viewModelScope.launch {
@@ -163,6 +183,7 @@ internal class RemindersViewModel
                             hour = editor.hour,
                             minute = editor.minute,
                             daysOfWeekMask = editor.daysOfWeekMask,
+                            repeatIntervalMinutes = repeatIntervalMinutes,
                         )
                     if (editor.reminderId == null) {
                         repository.add(reminder)
@@ -197,6 +218,7 @@ internal class RemindersViewModel
             viewModelScope.launch {
                 try {
                     repository.delete(deletion.reminder.id)
+                    repository.deleteSession(deletion.reminder.id)
                     alarmScheduler.cancel(deletion.reminder.id)
                     if (state.value.viewingReminderId == deletion.reminder.id) {
                         closeReminderView()
@@ -218,6 +240,7 @@ internal class RemindersViewModel
             savedStateHandle.remove<Int>(EDITOR_HOUR)
             savedStateHandle.remove<Int>(EDITOR_MINUTE)
             savedStateHandle.remove<Int>(EDITOR_DAYS_OF_WEEK_MASK)
+            savedStateHandle.remove<String>(EDITOR_REPEAT_INTERVAL)
             mutableState.update { it.copy(editor = null) }
         }
 
@@ -225,6 +248,24 @@ internal class RemindersViewModel
             savedStateHandle[EDITOR_HOUR] = editor.hour
             savedStateHandle[EDITOR_MINUTE] = editor.minute
             savedStateHandle[EDITOR_DAYS_OF_WEEK_MASK] = editor.daysOfWeekMask
+            savedStateHandle[EDITOR_REPEAT_INTERVAL] = editor.repeatIntervalMinutes
+        }
+
+        private fun scheduleSessions() {
+            viewModelScope.launch {
+                try {
+                    val sessions = repository.sessions.first()
+                    sessions.forEach { session ->
+                        if (repository.getReminder(session.reminderId) != null) {
+                            alarmScheduler.scheduleSession(session)
+                        }
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    mutableState.update { it.copy(loadingStatus = LoadingStatus.ERROR) }
+                }
+            }
         }
 
         private companion object {
@@ -233,6 +274,7 @@ internal class RemindersViewModel
             const val EDITOR_HOUR = "editorHour"
             const val EDITOR_MINUTE = "editorMinute"
             const val EDITOR_DAYS_OF_WEEK_MASK = "editorDaysOfWeekMask"
+            const val EDITOR_REPEAT_INTERVAL = "editorRepeatInterval"
             const val VIEWING_REMINDER_ID = "viewingReminderId"
         }
     }

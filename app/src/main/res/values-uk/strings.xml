@@ -13,6 +13,9 @@
     <string name="reminder_time">Час спрацювання</string>
     <string name="time_format">%1$02d:%2$02d</string>
     <string name="reminder_days">Дні тижня</string>
+    <string name="reminder_repeat_interval">Повторювати кожні (хвилин)</string>
+    <string name="reminder_repeat_interval_hint">Якщо не підтвердити, нагадування повториться через цей час.</string>
+    <string name="reminder_repeat_interval_detail">Повторювати кожні %1$d хвилин до підтвердження</string>
     <string name="no_days_selected">Дні не вибрано</string>
     <string name="monday">Понеділок</string>
     <string name="tuesday">Вівторок</string>
@@ -34,6 +37,8 @@
     <string name="load_error">Не вдалося завантажити задачі.</string>
     <string name="retry">Повторити</string>
     <string name="reminder_notification_title">Нагадування</string>
+    <string name="reminder_notification_confirm">Виконано</string>
+    <string name="reminder_notification_snooze">Відкласти</string>
     <string name="reminder_notification_channel">Нагадування</string>
     <string name="reminder_notification_channel_description">Сповіщення про заплановані нагадування</string>
 </resources>

@@ -28,6 +28,9 @@
             android:name=".reminders.ReminderAlarmReceiver"
             android:exported="false" />
         <receiver
+            android:name=".reminders.ReminderActionReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".reminders.ReminderRescheduleReceiver"
             android:exported="false">
             <intent-filter>

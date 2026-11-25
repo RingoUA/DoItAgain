@@ -3,6 +3,7 @@ package com.r8.doitagain.data
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.Update
@@ -15,6 +16,9 @@ internal interface ReminderDao {
     @Query("SELECT * FROM reminders ORDER BY id ASC")
     fun observeAll(): Flow<List<Reminder>>
 
+    @Query("SELECT * FROM reminders WHERE id = :id")
+    suspend fun getById(id: Long): Reminder?
+
     @Insert
     suspend fun insert(reminder: Reminder): Long
 
@@ -23,13 +27,43 @@ internal interface ReminderDao {
 
     @Query("DELETE FROM reminders WHERE id = :id")
     suspend fun delete(id: Long): Int
+
+    @Query("SELECT * FROM reminder_sessions ORDER BY reminder_id ASC")
+    fun observeSessions(): Flow<List<ReminderSession>>
+
+    @Query("SELECT * FROM reminder_sessions WHERE reminder_id = :reminderId")
+    suspend fun getSession(reminderId: Long): ReminderSession?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveSession(session: ReminderSession)
+
+    @Query("DELETE FROM reminder_sessions WHERE reminder_id = :reminderId")
+    suspend fun deleteSession(reminderId: Long)
 }
 
-@Database(entities = [Reminder::class], version = 2, exportSchema = true)
+@Database(entities = [Reminder::class, ReminderSession::class], version = 3, exportSchema = true)
 internal abstract class ReminderDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
 
     internal companion object {
+        val MIGRATION_2_3 =
+            object : Migration(2, 3) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "ALTER TABLE reminders ADD COLUMN repeat_interval_minutes INTEGER NOT NULL DEFAULT 5",
+                    )
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS reminder_sessions (
+                            reminder_id INTEGER NOT NULL,
+                            next_notification_at_millis INTEGER NOT NULL,
+                            PRIMARY KEY(reminder_id)
+                        )
+                        """.trimIndent(),
+                    )
+                }
+            }
+
         val MIGRATION_1_2 =
             object : Migration(1, 2) {
                 override fun migrate(db: SupportSQLiteDatabase) {

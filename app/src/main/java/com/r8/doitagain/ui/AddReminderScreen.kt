@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.r8.doitagain.R
@@ -44,6 +45,7 @@ internal fun AddReminderScreen(
     onTitleChange: (String) -> Unit,
     onTimeChange: (Int, Int) -> Unit,
     onToggleWeekday: (Int) -> Unit,
+    onRepeatIntervalChange: (String) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -86,7 +88,10 @@ internal fun AddReminderScreen(
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            if (state.title.isNotBlank() && canEdit) {
+                            if (state.title.isNotBlank() &&
+                                state.repeatIntervalMinutes.toIntOrNull()?.let { it > 0 } == true &&
+                                canEdit
+                            ) {
                                 keyboardController?.hide()
                                 onSave()
                             }
@@ -121,6 +126,17 @@ internal fun AddReminderScreen(
                     enabled = canEdit,
                     onToggleWeekday = onToggleWeekday,
                 )
+                OutlinedTextField(
+                    value = state.repeatIntervalMinutes,
+                    onValueChange = onRepeatIntervalChange,
+                    label = { Text(stringResource(R.string.reminder_repeat_interval)) },
+                    supportingText = { Text(stringResource(R.string.reminder_repeat_interval_hint)) },
+                    singleLine = true,
+                    enabled = canEdit,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = state.repeatIntervalMinutes.toIntOrNull()?.let { it <= 0 } ?: true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 if (state.status == SavingStatus.ERROR) {
                     Text(
                         text = stringResource(R.string.save_error),
@@ -146,7 +162,9 @@ internal fun AddReminderScreen(
                         keyboardController?.hide()
                         onSave()
                     },
-                    enabled = state.title.isNotBlank() && canEdit,
+                    enabled = state.title.isNotBlank() &&
+                        state.repeatIntervalMinutes.toIntOrNull()?.let { it > 0 } == true &&
+                        canEdit,
                 ) {
                     if (state.status == SavingStatus.SAVING) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
@@ -169,6 +187,7 @@ private fun AddReminderScreenPreview() {
             onTitleChange = {},
             onTimeChange = { _, _ -> },
             onToggleWeekday = {},
+            onRepeatIntervalChange = {},
             onSave = {},
             onCancel = {},
         )

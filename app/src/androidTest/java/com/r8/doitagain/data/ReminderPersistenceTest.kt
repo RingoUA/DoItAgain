@@ -81,16 +81,21 @@ class ReminderPersistenceTest {
                     hour = 7,
                     minute = 5,
                     daysOfWeekMask = ReminderWeekday.MONDAY.bit or ReminderWeekday.WEDNESDAY.bit,
+                    repeatIntervalMinutes = 15,
                 )
             repository.add(reminder)
             val original = withTimeout(5_000.milliseconds) { repository.reminders.first() }.single()
             assertEquals(7, original.hour)
             assertEquals(5, original.minute)
             assertEquals(reminder.daysOfWeekMask, original.daysOfWeekMask)
+            assertEquals(reminder.repeatIntervalMinutes, original.repeatIntervalMinutes)
+            val session = ReminderSession(original.id, 1_800_000_000_000)
+            repository.saveSession(session)
             database?.close()
 
             val reopened = RoomReminderRepository(openDatabase().reminderDao())
             assertEquals(original, withTimeout(5_000.milliseconds) { reopened.reminders.first() }.single())
+            assertEquals(session, withTimeout(5_000.milliseconds) { reopened.sessions.first() }.single())
         }
 
     @Test
@@ -116,12 +121,51 @@ class ReminderPersistenceTest {
             assertEquals(Reminder.DEFAULT_REMINDER_HOUR, reminder.hour)
             assertEquals(0, reminder.minute)
             assertEquals(Reminder.ALL_DAYS_MASK, reminder.daysOfWeekMask)
+            assertEquals(Reminder.DEFAULT_REPEAT_INTERVAL_MINUTES, reminder.repeatIntervalMinutes)
+        }
+
+    @Test
+    fun versionTwoDatabaseMigratesWithDefaultRepeatInterval() =
+        runBlocking {
+            val legacyDatabase = context.getDatabasePath(databaseName)
+            legacyDatabase.parentFile?.mkdirs()
+            SQLiteDatabase.openOrCreateDatabase(legacyDatabase, null).use { db ->
+                db.execSQL(
+                    """
+                    CREATE TABLE reminders (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        title TEXT NOT NULL,
+                        hour INTEGER NOT NULL,
+                        minute INTEGER NOT NULL,
+                        days_of_week_mask INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "INSERT INTO reminders (title, hour, minute, days_of_week_mask) VALUES ('Existing reminder', 9, 0, 127)",
+                )
+                db.execSQL("CREATE TABLE room_master_table (id INTEGER PRIMARY KEY, identity_hash TEXT)")
+                db.execSQL(
+                    "INSERT INTO room_master_table (id, identity_hash) VALUES (42, '64a61a300ee8977e3791d768ff84528c')",
+                )
+                db.version = 2
+            }
+
+            val migrated = openDatabase()
+            val reminder = withTimeout(5_000.milliseconds) {
+                RoomReminderRepository(migrated.reminderDao()).reminders.first().single()
+            }
+            assertEquals(Reminder.DEFAULT_REPEAT_INTERVAL_MINUTES, reminder.repeatIntervalMinutes)
+            assertTrue(withTimeout(5_000.milliseconds) {
+                RoomReminderRepository(migrated.reminderDao()).sessions.first()
+            }.isEmpty())
         }
 
     private fun openDatabase(): ReminderDatabase =
         Room
             .databaseBuilder(context, ReminderDatabase::class.java, databaseName)
             .addMigrations(ReminderDatabase.MIGRATION_1_2)
+            .addMigrations(ReminderDatabase.MIGRATION_2_3)
             .build()
             .also { database = it }
 }

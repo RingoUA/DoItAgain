@@ -25,7 +25,14 @@ internal class ReminderRescheduleReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                alarmScheduler.scheduleAll(reminderRepository.reminders.first())
+                val reminders = reminderRepository.reminders.first()
+                alarmScheduler.scheduleAll(reminders)
+                val remindersById = reminders.associateBy { it.id }
+                reminderRepository.sessions.first().forEach { session ->
+                    if (remindersById.containsKey(session.reminderId)) {
+                        alarmScheduler.scheduleSession(session)
+                    }
+                }
             } finally {
                 pendingResult.finish()
             }

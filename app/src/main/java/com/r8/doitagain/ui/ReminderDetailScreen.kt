@@ -65,6 +65,12 @@ internal fun ReminderDetailScreen(
                     enabled = false,
                     onToggleWeekday = {},
                 )
+                Text(
+                    stringResource(
+                        R.string.reminder_repeat_interval_detail,
+                        reminder.repeatIntervalMinutes,
+                    ),
+                )
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),

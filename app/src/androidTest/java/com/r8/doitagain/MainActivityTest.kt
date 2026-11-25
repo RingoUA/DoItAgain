@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -31,9 +32,9 @@ class MainActivityTest {
     fun addingDraftSurvivesRecreationAndCancelReturnsToList() {
         composeRule.onNodeWithContentDescription(text(R.string.add_reminder)).performClick()
         composeRule.onNodeWithText(text(R.string.save)).assertIsNotEnabled()
-        composeRule.onNode(hasSetTextAction()).performTextInput("My draft")
+        composeRule.onNode(hasSetTextAction() and hasText("")).performTextInput("My draft")
         composeRule.activityRule.scenario.recreate()
-        composeRule.onNode(hasSetTextAction()).assertTextContains("My draft")
+        composeRule.onNode(hasSetTextAction() and hasText("My draft")).assertTextContains("My draft")
         composeRule.onNodeWithText(text(R.string.cancel)).performClick()
         composeRule.onNodeWithText(text(R.string.home_title)).assertIsDisplayed()
         composeRule.onNodeWithText("My draft").assertDoesNotExist()

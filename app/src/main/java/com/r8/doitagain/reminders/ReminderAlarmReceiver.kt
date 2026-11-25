@@ -3,41 +3,74 @@ package com.r8.doitagain.reminders
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.r8.doitagain.data.Reminder
+import android.util.Log
+import com.r8.doitagain.data.ReminderRepository
+import com.r8.doitagain.data.ReminderSession
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
 internal class ReminderAlarmReceiver : BroadcastReceiver() {
     @Inject lateinit var alarmScheduler: ReminderAlarmScheduler
+    @Inject lateinit var reminderRepository: ReminderRepository
 
     override fun onReceive(
         context: Context,
         intent: Intent,
     ) {
-        val title = intent.getStringExtra(EXTRA_TITLE) ?: return
-        val hour = intent.getIntExtra(EXTRA_HOUR, -1)
-        val minute = intent.getIntExtra(EXTRA_MINUTE, -1)
-        val daysOfWeekMask = intent.getIntExtra(EXTRA_DAYS_OF_WEEK_MASK, -1)
-        val reminderId = intent.data?.lastPathSegment?.toLongOrNull() ?: return
-        if (hour !in 0..23 || minute !in 0..59 || daysOfWeekMask !in 0..Reminder.ALL_DAYS_MASK) return
-
-        showReminderNotification(context, reminderId, title)
-        alarmScheduler.schedule(
-            Reminder(
-                id = reminderId,
-                title = title,
-                hour = hour,
-                minute = minute,
-                daysOfWeekMask = daysOfWeekMask,
-            ),
-        )
+        val reminderId = intent.data?.pathSegments?.firstOrNull()?.toLongOrNull() ?: return
+        val pendingResult = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try {
+                val reminder = reminderRepository.getReminder(reminderId) ?: return@launch
+                if (intent.action == ACTION_SESSION_ALARM) {
+                    val session = reminderRepository.getSession(reminderId) ?: return@launch
+                    val now = System.currentTimeMillis()
+                    if (session.nextNotificationAtMillis > now) {
+                        alarmScheduler.scheduleSession(session)
+                        return@launch
+                    }
+                    showReminderNotification(context, reminder.id, reminder.title)
+                    val updatedSession =
+                        session.copy(
+                            nextNotificationAtMillis =
+                                now + reminder.repeatIntervalMinutes * MILLIS_PER_MINUTE,
+                        )
+                    reminderRepository.saveSession(updatedSession)
+                    alarmScheduler.scheduleSession(updatedSession)
+                } else {
+                    val now = System.currentTimeMillis()
+                    val existingSession = reminderRepository.getSession(reminderId)
+                    val session: ReminderSession
+                    if (existingSession == null) {
+                        session =
+                            ReminderSession(
+                                reminderId = reminderId,
+                                nextNotificationAtMillis =
+                                    now + reminder.repeatIntervalMinutes * MILLIS_PER_MINUTE,
+                            )
+                        reminderRepository.saveSession(session)
+                    } else {
+                        session = existingSession
+                    }
+                    showReminderNotification(context, reminder.id, reminder.title)
+                    alarmScheduler.scheduleSession(session)
+                    alarmScheduler.schedule(reminder)
+                }
+            } catch (error: Exception) {
+                Log.e(TAG, "Could not process reminder alarm", error)
+            } finally {
+                pendingResult.finish()
+            }
+        }
     }
 
     private companion object {
-        const val EXTRA_TITLE = "title"
-        const val EXTRA_HOUR = "hour"
-        const val EXTRA_MINUTE = "minute"
-        const val EXTRA_DAYS_OF_WEEK_MASK = "daysOfWeekMask"
+        const val TAG = "ReminderAlarmReceiver"
+        const val MILLIS_PER_MINUTE = 60_000L
     }
 }

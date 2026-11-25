@@ -14,6 +14,9 @@
     <string name="reminder_time">Time</string>
     <string name="time_format">%1$02d:%2$02d</string>
     <string name="reminder_days">Days</string>
+    <string name="reminder_repeat_interval">Repeat every (minutes)</string>
+    <string name="reminder_repeat_interval_hint">If not confirmed, the reminder repeats after this interval.</string>
+    <string name="reminder_repeat_interval_detail">Repeat every %1$d minutes until confirmed</string>
     <string name="no_days_selected">No days selected</string>
     <string name="monday">Monday</string>
     <string name="tuesday">Tuesday</string>
@@ -35,6 +38,8 @@
     <string name="load_error">Could not load your tasks.</string>
     <string name="retry">Retry</string>
     <string name="reminder_notification_title">Reminder</string>
+    <string name="reminder_notification_confirm">Done</string>
+    <string name="reminder_notification_snooze">Snooze</string>
     <string name="reminder_notification_channel">Reminders</string>
     <string name="reminder_notification_channel_description">Notifications for scheduled reminders</string>
 </resources>

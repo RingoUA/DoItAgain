@@ -3,6 +3,7 @@ package com.r8.doitagain.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import com.r8.doitagain.data.Reminder
+import com.r8.doitagain.data.ReminderSession
 import com.r8.doitagain.data.ReminderWeekday
 import com.r8.doitagain.data.ReminderRepository
 import com.r8.doitagain.reminders.ReminderAlarmScheduler
@@ -130,6 +131,7 @@ class RemindersViewModelTest {
             original.changeTitle("Draft")
             original.changeTime(18, 45)
             original.toggleWeekday(ReminderWeekday.SUNDAY.bit)
+            original.changeRepeatInterval("12")
             val restored = createModel(copySavedState(savedState))
             runCurrent()
             assertEquals(
@@ -138,6 +140,7 @@ class RemindersViewModelTest {
                     hour = 18,
                     minute = 45,
                     daysOfWeekMask = Reminder.ALL_DAYS_MASK xor ReminderWeekday.SUNDAY.bit,
+                    repeatIntervalMinutes = "12",
                 ),
                 restored.state.value.editor,
             )
@@ -152,6 +155,7 @@ class RemindersViewModelTest {
             model.changeTitle("Take medicine")
             model.changeTime(7, 5)
             model.toggleWeekday(ReminderWeekday.SATURDAY.bit)
+            model.changeRepeatInterval("15")
             model.save()
             runCurrent()
 
@@ -163,6 +167,7 @@ class RemindersViewModelTest {
                         hour = 7,
                         minute = 5,
                         daysOfWeekMask = Reminder.ALL_DAYS_MASK xor ReminderWeekday.SATURDAY.bit,
+                        repeatIntervalMinutes = 15,
                     ),
                 ),
                 model.state.value.reminders,
@@ -392,11 +397,16 @@ class RemindersViewModelTest {
 
         override fun schedule(reminder: Reminder) = Unit
 
+        override fun scheduleSession(session: ReminderSession) = Unit
+
         override fun cancel(reminderId: Long) = Unit
+
+        override fun cancelSession(reminderId: Long) = Unit
     }
 
     private class FakeReminderRepository : ReminderRepository {
         val rows = MutableStateFlow<List<Reminder>>(emptyList())
+        override val sessions = MutableStateFlow<List<ReminderSession>>(emptyList())
         var saveFails = false
         var loadFails = false
         var addCalls = 0
@@ -412,6 +422,19 @@ class RemindersViewModelTest {
                     if (loadFails) error("Read failed")
                     emitAll(rows)
                 }
+
+        override suspend fun getReminder(id: Long): Reminder? = rows.value.find { it.id == id }
+
+        override suspend fun getSession(reminderId: Long): ReminderSession? =
+            sessions.value.find { it.reminderId == reminderId }
+
+        override suspend fun saveSession(session: ReminderSession) {
+            sessions.value = sessions.value.filterNot { it.reminderId == session.reminderId } + session
+        }
+
+        override suspend fun deleteSession(reminderId: Long) {
+            sessions.value = sessions.value.filterNot { it.reminderId == reminderId }
+        }
 
         override suspend fun add(reminder: Reminder) {
             addCalls++
@@ -430,6 +453,7 @@ class RemindersViewModelTest {
             deleteCalls++
             if (deleteFails) error("Delete failed")
             rows.value = rows.value.filterNot { it.id == id }
+            deleteSession(id)
         }
     }
 }
