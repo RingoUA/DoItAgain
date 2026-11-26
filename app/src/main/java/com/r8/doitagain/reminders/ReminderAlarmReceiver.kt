@@ -34,7 +34,7 @@ internal class ReminderAlarmReceiver : BroadcastReceiver() {
                         alarmScheduler.scheduleSession(session)
                         return@launch
                     }
-                    showReminderNotification(context, reminder.id, reminder.title)
+                    showReminderNotification(context, reminder.id, reminder.title, reminder.vibrationEnabled)
                     val updatedSession =
                         session.copy(
                             nextNotificationAtMillis =
@@ -57,7 +57,7 @@ internal class ReminderAlarmReceiver : BroadcastReceiver() {
                     } else {
                         session = existingSession
                     }
-                    showReminderNotification(context, reminder.id, reminder.title)
+                    showReminderNotification(context, reminder.id, reminder.title, reminder.vibrationEnabled)
                     alarmScheduler.scheduleSession(session)
                     alarmScheduler.schedule(reminder)
                 }

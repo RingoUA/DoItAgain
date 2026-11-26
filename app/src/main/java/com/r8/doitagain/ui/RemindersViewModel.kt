@@ -41,6 +41,8 @@ internal class RemindersViewModel
                                 repeatIntervalMinutes =
                                     savedStateHandle.get<String>(EDITOR_REPEAT_INTERVAL)
                                         ?: Reminder.DEFAULT_REPEAT_INTERVAL_MINUTES.toString(),
+                                vibrationEnabled =
+                                    savedStateHandle.get<Boolean>(EDITOR_VIBRATION_ENABLED) ?: true,
                             )
                         },
                 ),
@@ -94,6 +96,7 @@ internal class RemindersViewModel
                     minute = reminder.minute,
                     daysOfWeekMask = reminder.daysOfWeekMask,
                     repeatIntervalMinutes = reminder.repeatIntervalMinutes.toString(),
+                    vibrationEnabled = reminder.vibrationEnabled,
                 ),
             )
             mutableState.update {
@@ -106,6 +109,7 @@ internal class RemindersViewModel
                             minute = reminder.minute,
                             daysOfWeekMask = reminder.daysOfWeekMask,
                             repeatIntervalMinutes = reminder.repeatIntervalMinutes.toString(),
+                            vibrationEnabled = reminder.vibrationEnabled,
                         ),
                 )
             }
@@ -162,6 +166,14 @@ internal class RemindersViewModel
             mutableState.update { it.copy(editor = updated) }
         }
 
+        fun changeVibration(enabled: Boolean) {
+            val editor = state.value.editor ?: return
+            if (editor.status == SavingStatus.SAVING) return
+            val updated = editor.copy(vibrationEnabled = enabled, status = SavingStatus.EDITING)
+            saveEditorSchedule(updated)
+            mutableState.update { it.copy(editor = updated) }
+        }
+
         fun cancelAdding() {
             if (state.value.editor?.status == SavingStatus.SAVING) return
             closeEditor()
@@ -184,6 +196,7 @@ internal class RemindersViewModel
                             minute = editor.minute,
                             daysOfWeekMask = editor.daysOfWeekMask,
                             repeatIntervalMinutes = repeatIntervalMinutes,
+                            vibrationEnabled = editor.vibrationEnabled,
                         )
                     if (editor.reminderId == null) {
                         repository.add(reminder)
@@ -241,6 +254,7 @@ internal class RemindersViewModel
             savedStateHandle.remove<Int>(EDITOR_MINUTE)
             savedStateHandle.remove<Int>(EDITOR_DAYS_OF_WEEK_MASK)
             savedStateHandle.remove<String>(EDITOR_REPEAT_INTERVAL)
+            savedStateHandle.remove<Boolean>(EDITOR_VIBRATION_ENABLED)
             mutableState.update { it.copy(editor = null) }
         }
 
@@ -249,6 +263,7 @@ internal class RemindersViewModel
             savedStateHandle[EDITOR_MINUTE] = editor.minute
             savedStateHandle[EDITOR_DAYS_OF_WEEK_MASK] = editor.daysOfWeekMask
             savedStateHandle[EDITOR_REPEAT_INTERVAL] = editor.repeatIntervalMinutes
+            savedStateHandle[EDITOR_VIBRATION_ENABLED] = editor.vibrationEnabled
         }
 
         private fun scheduleSessions() {
@@ -275,6 +290,7 @@ internal class RemindersViewModel
             const val EDITOR_MINUTE = "editorMinute"
             const val EDITOR_DAYS_OF_WEEK_MASK = "editorDaysOfWeekMask"
             const val EDITOR_REPEAT_INTERVAL = "editorRepeatInterval"
+            const val EDITOR_VIBRATION_ENABLED = "editorVibrationEnabled"
             const val VIEWING_REMINDER_ID = "viewingReminderId"
         }
     }

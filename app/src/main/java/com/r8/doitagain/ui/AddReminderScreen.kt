@@ -20,6 +20,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ internal fun AddReminderScreen(
     onTimeChange: (Int, Int) -> Unit,
     onToggleWeekday: (Int) -> Unit,
     onRepeatIntervalChange: (String) -> Unit,
+    onVibrationChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -137,6 +139,21 @@ internal fun AddReminderScreen(
                     isError = state.repeatIntervalMinutes.toIntOrNull()?.let { it <= 0 } ?: true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.reminder_vibration),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Switch(
+                        checked = state.vibrationEnabled,
+                        onCheckedChange = onVibrationChange,
+                        enabled = canEdit,
+                    )
+                }
                 if (state.status == SavingStatus.ERROR) {
                     Text(
                         text = stringResource(R.string.save_error),
@@ -188,6 +205,7 @@ private fun AddReminderScreenPreview() {
             onTimeChange = { _, _ -> },
             onToggleWeekday = {},
             onRepeatIntervalChange = {},
+            onVibrationChange = {},
             onSave = {},
             onCancel = {},
         )

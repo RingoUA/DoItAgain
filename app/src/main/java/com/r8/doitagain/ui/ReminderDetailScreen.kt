@@ -71,6 +71,12 @@ internal fun ReminderDetailScreen(
                         reminder.repeatIntervalMinutes,
                     ),
                 )
+                Text(
+                    stringResource(
+                        if (reminder.vibrationEnabled) R.string.reminder_vibration_enabled
+                        else R.string.reminder_vibration_disabled,
+                    ),
+                )
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),

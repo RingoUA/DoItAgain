@@ -122,6 +122,7 @@ class ReminderPersistenceTest {
             assertEquals(0, reminder.minute)
             assertEquals(Reminder.ALL_DAYS_MASK, reminder.daysOfWeekMask)
             assertEquals(Reminder.DEFAULT_REPEAT_INTERVAL_MINUTES, reminder.repeatIntervalMinutes)
+            assertTrue(reminder.vibrationEnabled)
         }
 
     @Test
@@ -156,6 +157,7 @@ class ReminderPersistenceTest {
                 RoomReminderRepository(migrated.reminderDao()).reminders.first().single()
             }
             assertEquals(Reminder.DEFAULT_REPEAT_INTERVAL_MINUTES, reminder.repeatIntervalMinutes)
+            assertTrue(reminder.vibrationEnabled)
             assertTrue(withTimeout(5_000.milliseconds) {
                 RoomReminderRepository(migrated.reminderDao()).sessions.first()
             }.isEmpty())
@@ -166,6 +168,7 @@ class ReminderPersistenceTest {
             .databaseBuilder(context, ReminderDatabase::class.java, databaseName)
             .addMigrations(ReminderDatabase.MIGRATION_1_2)
             .addMigrations(ReminderDatabase.MIGRATION_2_3)
+            .addMigrations(ReminderDatabase.MIGRATION_3_4)
             .build()
             .also { database = it }
 }

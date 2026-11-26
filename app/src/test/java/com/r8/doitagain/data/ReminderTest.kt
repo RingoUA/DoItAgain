@@ -5,6 +5,12 @@ import org.junit.Test
 
 class ReminderTest {
     @Test
+    fun vibrationIsEnabledByDefault() {
+        assertTrue(Reminder(title = "Vibrating reminder").vibrationEnabled)
+        assertTrue(!Reminder(title = "Silent reminder", vibrationEnabled = false).vibrationEnabled)
+    }
+
+    @Test
     fun acceptsValidTimeAndWeekdayMaskBoundaries() {
         assertTrue(runCatching { Reminder(title = "Start of day", hour = 0, minute = 0, daysOfWeekMask = 0) }.isSuccess)
         assertTrue(

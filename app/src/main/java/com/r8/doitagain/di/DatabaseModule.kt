@@ -21,6 +21,7 @@ internal object DatabaseModule {
             .databaseBuilder(context, ReminderDatabase::class.java, "reminders.db")
             .addMigrations(ReminderDatabase.MIGRATION_1_2)
             .addMigrations(ReminderDatabase.MIGRATION_2_3)
+            .addMigrations(ReminderDatabase.MIGRATION_3_4)
             .build()
 
     @Provides

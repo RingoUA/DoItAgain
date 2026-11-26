@@ -19,6 +19,8 @@ internal data class Reminder(
     val daysOfWeekMask: Int = ALL_DAYS_MASK,
     @ColumnInfo(name = "repeat_interval_minutes")
     val repeatIntervalMinutes: Int = DEFAULT_REPEAT_INTERVAL_MINUTES,
+    @ColumnInfo(name = "vibration_enabled")
+    val vibrationEnabled: Boolean = true,
 ) {
     init {
         require(title.isNotBlank()) { "Reminder title cannot be blank" }

@@ -16,6 +16,9 @@
     <string name="reminder_repeat_interval">Повторювати кожні (хвилин)</string>
     <string name="reminder_repeat_interval_hint">Якщо не підтвердити, нагадування повториться через цей час.</string>
     <string name="reminder_repeat_interval_detail">Повторювати кожні %1$d хвилин до підтвердження</string>
+    <string name="reminder_vibration">Вібрація</string>
+    <string name="reminder_vibration_enabled">Вібрація: увімкнена</string>
+    <string name="reminder_vibration_disabled">Вібрація: вимкнена</string>
     <string name="no_days_selected">Дні не вибрано</string>
     <string name="monday">Понеділок</string>
     <string name="tuesday">Вівторок</string>

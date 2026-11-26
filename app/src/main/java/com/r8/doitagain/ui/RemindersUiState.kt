@@ -22,6 +22,7 @@ internal data class AddReminderState(
     val minute: Int = 0,
     val daysOfWeekMask: Int = Reminder.ALL_DAYS_MASK,
     val repeatIntervalMinutes: String = Reminder.DEFAULT_REPEAT_INTERVAL_MINUTES.toString(),
+    val vibrationEnabled: Boolean = true,
 )
 
 internal enum class DeletingStatus {

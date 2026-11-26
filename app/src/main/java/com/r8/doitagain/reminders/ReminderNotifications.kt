@@ -15,23 +15,39 @@ import androidx.core.net.toUri
 import com.r8.doitagain.R
 
 internal const val REMINDER_NOTIFICATION_CHANNEL_ID = "reminders"
+private const val REMINDER_VIBRATION_CHANNEL_ID = "reminders_vibration"
+private const val REMINDER_NO_VIBRATION_CHANNEL_ID = "reminders_no_vibration"
 
 internal fun createReminderNotificationChannel(context: Context) {
-    val channel =
-        NotificationChannel(
-            REMINDER_NOTIFICATION_CHANNEL_ID,
-            context.getString(R.string.reminder_notification_channel),
-            NotificationManager.IMPORTANCE_HIGH,
-        ).apply {
-            description = context.getString(R.string.reminder_notification_channel_description)
-        }
-    context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    val manager = context.getSystemService(NotificationManager::class.java)
+    val channels =
+        listOf(
+            NotificationChannel(
+                REMINDER_VIBRATION_CHANNEL_ID,
+                context.getString(R.string.reminder_notification_channel),
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                description = context.getString(R.string.reminder_notification_channel_description)
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
+            },
+            NotificationChannel(
+                REMINDER_NO_VIBRATION_CHANNEL_ID,
+                context.getString(R.string.reminder_notification_channel),
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                description = context.getString(R.string.reminder_notification_channel_description)
+                enableVibration(false)
+            },
+        )
+    manager.createNotificationChannels(channels)
 }
 
 internal fun showReminderNotification(
     context: Context,
     reminderId: Long,
     title: String,
+    vibrationEnabled: Boolean = true,
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
@@ -39,13 +55,22 @@ internal fun showReminderNotification(
     ) {
         return
     }
+    val channelId =
+        if (vibrationEnabled) REMINDER_VIBRATION_CHANNEL_ID else REMINDER_NO_VIBRATION_CHANNEL_ID
     val notification =
         NotificationCompat
-            .Builder(context, REMINDER_NOTIFICATION_CHANNEL_ID)
+            .Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle(context.getString(R.string.reminder_notification_title))
             .setContentText(title)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .apply {
+                if (vibrationEnabled) {
+                    setVibrate(longArrayOf(0, 500, 200, 500))
+                } else {
+                    setVibrate(longArrayOf(0))
+                }
+            }
             .setDeleteIntent(
                 actionPendingIntent(context, reminderId, ACTION_DISMISS_REMINDER),
             )
