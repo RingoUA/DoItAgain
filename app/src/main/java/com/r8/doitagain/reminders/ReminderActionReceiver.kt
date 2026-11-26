@@ -32,7 +32,20 @@ internal class ReminderActionReceiver : BroadcastReceiver() {
                         alarmScheduler.cancelSession(reminderId)
                         NotificationManagerCompat.from(context).cancel(reminderId.hashCode())
                     }
-                    ACTION_SNOOZE_REMINDER, ACTION_DISMISS_REMINDER -> {
+                    ACTION_SNOOZE_REMINDER -> {
+                        val reminder = reminderRepository.getReminder(reminderId) ?: return@launch
+                        val session = reminderRepository.getSession(reminderId) ?: return@launch
+                        NotificationManagerCompat.from(context).cancel(reminderId.hashCode())
+                        val updatedSession =
+                            session.copy(
+                                nextNotificationAtMillis =
+                                    System.currentTimeMillis() +
+                                        reminder.snoozeIntervalMinutes * MILLIS_PER_MINUTE,
+                            )
+                        reminderRepository.saveSession(updatedSession)
+                        alarmScheduler.scheduleSession(updatedSession)
+                    }
+                    ACTION_DISMISS_REMINDER -> {
                         val reminder = reminderRepository.getReminder(reminderId) ?: return@launch
                         val session = reminderRepository.getSession(reminderId) ?: return@launch
                         NotificationManagerCompat.from(context).cancel(reminderId.hashCode())

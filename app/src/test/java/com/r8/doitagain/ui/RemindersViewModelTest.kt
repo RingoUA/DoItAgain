@@ -141,6 +141,7 @@ class RemindersViewModelTest {
                     minute = 45,
                     daysOfWeekMask = Reminder.ALL_DAYS_MASK xor ReminderWeekday.SUNDAY.bit,
                     repeatIntervalMinutes = "12",
+                    snoozeIntervalMinutes = "24",
                 ),
                 restored.state.value.editor,
             )
@@ -168,6 +169,7 @@ class RemindersViewModelTest {
                         minute = 5,
                         daysOfWeekMask = Reminder.ALL_DAYS_MASK xor ReminderWeekday.SATURDAY.bit,
                         repeatIntervalMinutes = 15,
+                        snoozeIntervalMinutes = 30,
                     ),
                 ),
                 model.state.value.reminders,

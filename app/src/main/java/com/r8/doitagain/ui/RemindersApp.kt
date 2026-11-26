@@ -25,6 +25,7 @@ internal fun RemindersApp(viewModel: RemindersViewModel) {
             onTimeChange = viewModel::changeTime,
             onToggleWeekday = viewModel::toggleWeekday,
             onRepeatIntervalChange = viewModel::changeRepeatInterval,
+            onSnoozeIntervalChange = viewModel::changeSnoozeInterval,
             onVibrationChange = viewModel::changeVibration,
             onSave = viewModel::save,
             onCancel = viewModel::cancelAdding,

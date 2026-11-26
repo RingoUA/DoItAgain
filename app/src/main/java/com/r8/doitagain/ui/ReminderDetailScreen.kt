@@ -73,6 +73,12 @@ internal fun ReminderDetailScreen(
                 )
                 Text(
                     stringResource(
+                        R.string.reminder_snooze_interval_detail,
+                        reminder.snoozeIntervalMinutes,
+                    ),
+                )
+                Text(
+                    stringResource(
                         if (reminder.vibrationEnabled) R.string.reminder_vibration_enabled
                         else R.string.reminder_vibration_disabled,
                     ),

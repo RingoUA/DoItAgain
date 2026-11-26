@@ -33,5 +33,9 @@ class ReminderTest {
             runCatching { Reminder(title = "Invalid repeat interval", repeatIntervalMinutes = 0) }
                 .exceptionOrNull() is IllegalArgumentException,
         )
+        assertTrue(
+            runCatching { Reminder(title = "Invalid snooze interval", snoozeIntervalMinutes = 0) }
+                .exceptionOrNull() is IllegalArgumentException,
+        )
     }
 }

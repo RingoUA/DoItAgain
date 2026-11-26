@@ -17,6 +17,9 @@
     <string name="reminder_repeat_interval">Repeat every (minutes)</string>
     <string name="reminder_repeat_interval_hint">If not confirmed, the reminder repeats after this interval.</string>
     <string name="reminder_repeat_interval_detail">Repeat every %1$d minutes until confirmed</string>
+    <string name="reminder_snooze_interval">Snooze interval (minutes)</string>
+    <string name="reminder_snooze_interval_hint">The reminder repeats after this interval when Snoozed.</string>
+    <string name="reminder_snooze_interval_detail">Snooze for %1$d minutes</string>
     <string name="reminder_vibration">Vibration</string>
     <string name="reminder_vibration_enabled">Vibration: enabled</string>
     <string name="reminder_vibration_disabled">Vibration: disabled</string>

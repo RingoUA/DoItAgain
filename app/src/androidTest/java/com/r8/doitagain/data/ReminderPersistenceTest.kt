@@ -169,6 +169,7 @@ class ReminderPersistenceTest {
             .addMigrations(ReminderDatabase.MIGRATION_1_2)
             .addMigrations(ReminderDatabase.MIGRATION_2_3)
             .addMigrations(ReminderDatabase.MIGRATION_3_4)
+            .addMigrations(ReminderDatabase.MIGRATION_4_5)
             .build()
             .also { database = it }
 }

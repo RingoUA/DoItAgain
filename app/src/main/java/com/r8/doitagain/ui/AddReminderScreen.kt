@@ -47,6 +47,7 @@ internal fun AddReminderScreen(
     onTimeChange: (Int, Int) -> Unit,
     onToggleWeekday: (Int) -> Unit,
     onRepeatIntervalChange: (String) -> Unit,
+    onSnoozeIntervalChange: (String) -> Unit,
     onVibrationChange: (Boolean) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
@@ -92,7 +93,8 @@ internal fun AddReminderScreen(
                         onDone = {
                             if (state.title.isNotBlank() &&
                                 state.repeatIntervalMinutes.toIntOrNull()?.let { it > 0 } == true &&
-                                canEdit
+                            state.snoozeIntervalMinutes.toIntOrNull()?.let { it > 0 } == true &&
+                            canEdit
                             ) {
                                 keyboardController?.hide()
                                 onSave()
@@ -139,6 +141,17 @@ internal fun AddReminderScreen(
                     isError = state.repeatIntervalMinutes.toIntOrNull()?.let { it <= 0 } ?: true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                OutlinedTextField(
+                    value = state.snoozeIntervalMinutes,
+                    onValueChange = onSnoozeIntervalChange,
+                    label = { Text(stringResource(R.string.reminder_snooze_interval)) },
+                    supportingText = { Text(stringResource(R.string.reminder_snooze_interval_hint)) },
+                    singleLine = true,
+                    enabled = canEdit,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = state.snoozeIntervalMinutes.toIntOrNull()?.let { it <= 0 } ?: true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -181,6 +194,7 @@ internal fun AddReminderScreen(
                     },
                     enabled = state.title.isNotBlank() &&
                         state.repeatIntervalMinutes.toIntOrNull()?.let { it > 0 } == true &&
+                        state.snoozeIntervalMinutes.toIntOrNull()?.let { it > 0 } == true &&
                         canEdit,
                 ) {
                     if (state.status == SavingStatus.SAVING) {
@@ -205,6 +219,7 @@ private fun AddReminderScreenPreview() {
             onTimeChange = { _, _ -> },
             onToggleWeekday = {},
             onRepeatIntervalChange = {},
+            onSnoozeIntervalChange = {},
             onVibrationChange = {},
             onSave = {},
             onCancel = {},

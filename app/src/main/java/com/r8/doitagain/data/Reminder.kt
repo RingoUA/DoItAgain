@@ -19,6 +19,8 @@ internal data class Reminder(
     val daysOfWeekMask: Int = ALL_DAYS_MASK,
     @ColumnInfo(name = "repeat_interval_minutes")
     val repeatIntervalMinutes: Int = DEFAULT_REPEAT_INTERVAL_MINUTES,
+    @ColumnInfo(name = "snooze_interval_minutes")
+    val snoozeIntervalMinutes: Int = DEFAULT_SNOOZE_INTERVAL_MINUTES,
     @ColumnInfo(name = "vibration_enabled")
     val vibrationEnabled: Boolean = true,
 ) {
@@ -28,12 +30,14 @@ internal data class Reminder(
         require(minute in 0..59) { "Reminder minute must be between 0 and 59" }
         require(daysOfWeekMask in 0..ALL_DAYS_MASK) { "Reminder weekday mask must use only seven bits" }
         require(repeatIntervalMinutes > 0) { "Reminder repeat interval must be positive" }
+        require(snoozeIntervalMinutes > 0) { "Reminder snooze interval must be positive" }
     }
 
     internal companion object {
         const val DEFAULT_REMINDER_HOUR = 9
         const val ALL_DAYS_MASK = 0b1111111
         const val DEFAULT_REPEAT_INTERVAL_MINUTES = 5
+        const val DEFAULT_SNOOZE_INTERVAL_MINUTES = DEFAULT_REPEAT_INTERVAL_MINUTES * 2
     }
 }
 

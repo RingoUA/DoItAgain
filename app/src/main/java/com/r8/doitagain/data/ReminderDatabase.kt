@@ -41,11 +41,23 @@ internal interface ReminderDao {
     suspend fun deleteSession(reminderId: Long)
 }
 
-@Database(entities = [Reminder::class, ReminderSession::class], version = 4, exportSchema = true)
+@Database(entities = [Reminder::class, ReminderSession::class], version = 5, exportSchema = true)
 internal abstract class ReminderDatabase : RoomDatabase() {
     abstract fun reminderDao(): ReminderDao
 
     internal companion object {
+        val MIGRATION_4_5 =
+            object : Migration(4, 5) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "ALTER TABLE reminders ADD COLUMN snooze_interval_minutes INTEGER NOT NULL DEFAULT 10",
+                    )
+                    db.execSQL(
+                        "UPDATE reminders SET snooze_interval_minutes = repeat_interval_minutes * 2",
+                    )
+                }
+            }
+
         val MIGRATION_3_4 =
             object : Migration(3, 4) {
                 override fun migrate(db: SupportSQLiteDatabase) {
